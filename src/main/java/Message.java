@@ -192,4 +192,54 @@ public class Message {
         return output.toString();
     }
 
+    /*
+     * spelling 
+     */
+    public int returnTotalMessagess() {
+        return SENT_MESSAGES.size();
+    }
+
+    public static int getTotalSentMessages() {
+        return SENT_MESSAGES.size();
+    }
+
+    public String formatMessageDetails() {
+        return "Message ID: " + messageId + System.lineSeparator()
+                + "Message Hash: " + createMessageHash() + System.lineSeparator()
+                + "Recipient: " + recipient + System.lineSeparator()
+                + "Message: " + messageText;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+    public int getMessageNumber() {
+    return messageNumber;
+}
+
+public String getRecipient() {
+    return recipient;
+}
+
+public String getMessageText() {
+    return messageText;
+}
+
+public String getMessageHash() {
+    return createMessageHash();
+}
+
+/*
+ * Keeps the  stored-message list in sync when message is deleted.
+ */
+public static void removeStoredMessageFromSession(String messageHash) {
+    STORED_MESSAGES.removeIf(message ->
+            message.getMessageHash().equals(messageHash));
+}
+
+    public static void resetMessagesForTests() {
+        SENT_MESSAGES.clear();
+        STORED_MESSAGES.clear();
+    }
+}
     
