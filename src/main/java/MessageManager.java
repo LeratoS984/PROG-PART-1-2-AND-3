@@ -71,3 +71,59 @@ public class MessageManager {
         messageHashes[metadataCount] = message.getMessageHash();
         metadataCount++;
     }
+/*
+     * Reads stored_messages.json and places its messages into the stored array.
+     */
+    public String loadStoredMessagesFromJson() {
+        clearStoredMessages();
+
+        if (!Files.exists(STORED_FILE)) {
+            return "No stored message file was found.";
+        }
+
+        try {
+            String json = Files.readString(STORED_FILE, StandardCharsets.UTF_8);
+            Matcher matcher = JSON_MESSAGE_PATTERN.matcher(json);
+
+            while (matcher.find()) {
+                String messageId = matcher.group(1);
+                String messageHash = matcher.group(2);
+                String recipient = unescapeJson(matcher.group(3));
+                String messageText = unescapeJson(matcher.group(4));
+
+                int messageNumber = extractMessageNumber(messageHash);
+
+                Message message = new Message(
+                        messageId,
+                        messageNumber,
+                        recipient,
+                        messageText
+                );
+
+                addStoredMessage(message);
+            }
+
+            if (storedCount == 0) {
+                return "No stored messages were found in the JSON file.";
+            }
+
+            return storedCount + " stored message(s) loaded successfully.";
+
+        } catch (IOException exception) {
+            return "Stored messages could not be loaded.";
+        }
+    }
+
+    private int extractMessageNumber(String messageHash) {
+        String[] hashParts = messageHash.split(":");
+
+        if (hashParts.length >= 2) {
+            try {
+                return Integer.parseInt(hashParts[1]);
+            } catch (NumberFormatException exception) {
+                return 0;
+            }
+        }
+
+        return 0;
+    }
