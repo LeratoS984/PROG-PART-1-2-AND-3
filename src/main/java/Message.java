@@ -230,7 +230,7 @@ public String getMessageHash() {
 }
 
 /*
- * Keeps the  stored-message list in sync when message is deleted.
+ * Keeps the stored-message list in sync when message is deleted.
  */
 public static void removeStoredMessageFromSession(String messageHash) {
     STORED_MESSAGES.removeIf(message ->
