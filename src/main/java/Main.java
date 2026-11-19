@@ -3,20 +3,21 @@
 import java.util.Scanner;
 
 /**
- * Runs the registration and login
+ * Runs the combined Part 1, Part 2, and Part 3 QuickChat application.
  */
 public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Login login = new Login();
+        MessageManager messageManager = new MessageManager();
 
         System.out.println("Welcome to QuickChat.");
         System.out.println();
 
-        boolean loginSuccessful = registerAndLogIn(scanner, login);
+        String senderName = registerAndLogIn(scanner, login);
 
-        if (!loginSuccessful) {
+        if (senderName == null) {
             System.out.println("You must log in successfully before sending messages.");
             return;
         }
@@ -34,6 +35,7 @@ public class Main {
             System.out.println("1) Send Messages");
             System.out.println("2) Show recently sent messages");
             System.out.println("3) Quit");
+            System.out.println("4) Stored Messages");
             System.out.print("Choose an option: ");
 
             String menuChoice = scanner.nextLine().trim();
@@ -46,7 +48,8 @@ public class Main {
                         enteredMessages = captureMessage(
                                 scanner,
                                 enteredMessages,
-                                allowedMessages
+                                allowedMessages,
+                                messageManager
                         );
                     }
                     break;
@@ -62,14 +65,22 @@ public class Main {
                     applicationRunning = false;
                     break;
 
+                case "4":
+                    manageStoredMessages(
+                            scanner,
+                            messageManager,
+                            senderName
+                    );
+                    break;
+
                 default:
-                    System.out.println("Please choose option 1, 2, or 3.");
+                    System.out.println("Please choose option 1, 2, 3, or 4.");
                     break;
             }
         }
     }
 
-    private static boolean registerAndLogIn(Scanner scanner, Login login) {
+    private static String registerAndLogIn(Scanner scanner, Login login) {
         System.out.print("Enter your first name: ");
         String firstName = scanner.nextLine().trim();
 
@@ -96,7 +107,7 @@ public class Main {
 
         if (!login.isRegistered()) {
             System.out.println("Registration was unsuccessful. Restart the program and correct your details.");
-            return false;
+            return null;
         }
 
         System.out.println();
@@ -114,11 +125,17 @@ public class Main {
         );
 
         System.out.println(login.returnLoginStatus(loginSuccessful));
-        return loginSuccessful;
+
+        if (!loginSuccessful) {
+            return null;
+        }
+
+        return firstName;
     }
 
     private static int captureMessage(Scanner scanner,
-            int enteredMessages, int allowedMessages) {
+            int enteredMessages, int allowedMessages,
+            MessageManager messageManager) {
 
         System.out.println();
         System.out.println("Message " + (enteredMessages + 1)
@@ -150,17 +167,34 @@ public class Main {
             return enteredMessages;
         }
 
+        messageManager.addMessageMetadata(message);
+
         System.out.println("Message ID generated: " + message.getMessageId());
-        System.out.println("Message Hash: " + message.createMessageHash());
+        System.out.println("Message Hash: " + message.getMessageHash());
 
         int sendingChoice = readSendingChoice(scanner);
 
-        String result = message.SentMessage(sendingChoice);
-        System.out.println(result);
+        switch (sendingChoice) {
+            case 1:
+                System.out.println(message.SentMessage(1));
+                messageManager.addSentMessage(message);
 
-        if (sendingChoice == 1) {
-            System.out.println();
-            System.out.println(message.formatMessageDetails());
+                System.out.println();
+                System.out.println(message.formatMessageDetails());
+                break;
+
+            case 2:
+                System.out.println(message.SentMessage(2));
+                messageManager.addDisregardedMessage(message);
+                break;
+
+            case 3:
+                System.out.println(message.SentMessage(3));
+                System.out.println(messageManager.loadStoredMessagesFromJson());
+                break;
+
+            default:
+                break;
         }
 
         int newEnteredMessages = enteredMessages + 1;
@@ -173,6 +207,86 @@ public class Main {
         }
 
         return newEnteredMessages;
+    }
+
+    private static void manageStoredMessages(Scanner scanner,
+            MessageManager messageManager, String senderName) {
+
+        System.out.println();
+        System.out.println(messageManager.loadStoredMessagesFromJson());
+
+        boolean storedMenuRunning = true;
+
+        while (storedMenuRunning) {
+            System.out.println();
+            System.out.println("STORED MESSAGES MENU");
+            System.out.println("1) Display stored message sender and recipient");
+            System.out.println("2) Display longest stored message");
+            System.out.println("3) Search for a message ID");
+            System.out.println("4) Search messages for a recipient");
+            System.out.println("5) Delete a message using a message hash");
+            System.out.println("6) Display message report");
+            System.out.println("7) Return to the main menu");
+            System.out.print("Choose an option: ");
+
+            String storedChoice = scanner.nextLine().trim();
+
+            switch (storedChoice) {
+                case "1":
+                    System.out.println(
+                            messageManager.displayStoredSendersAndRecipients(
+                                    senderName
+                            )
+                    );
+                    break;
+
+                case "2":
+                    System.out.println("Longest stored message: "
+                            + messageManager.getLongestStoredMessage());
+                    break;
+
+                case "3":
+                    System.out.print("Enter the message ID: ");
+                    String messageId = scanner.nextLine().trim();
+
+                    System.out.println(
+                            messageManager.searchMessageById(messageId)
+                    );
+                    break;
+
+                case "4":
+                    System.out.print("Enter the recipient number: ");
+                    String recipient = scanner.nextLine().trim();
+
+                    System.out.println(
+                            messageManager.searchMessagesForRecipient(recipient)
+                    );
+                    break;
+
+                case "5":
+                    System.out.print("Enter the message hash: ");
+                    String messageHash = scanner.nextLine().trim();
+
+                    System.out.println(
+                            messageManager.deleteStoredMessageByHash(messageHash)
+                    );
+                    break;
+
+                case "6":
+                    System.out.println(
+                            messageManager.createMessageReport()
+                    );
+                    break;
+
+                case "7":
+                    storedMenuRunning = false;
+                    break;
+
+                default:
+                    System.out.println("Please choose an option from 1 to 7.");
+                    break;
+            }
+        }
     }
 
     private static int readPositiveNumber(Scanner scanner, String prompt) {
