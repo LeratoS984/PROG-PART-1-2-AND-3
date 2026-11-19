@@ -25,3 +25,49 @@ public class MessageManager {
     private int disregardedCount;
     private int storedCount;
     private int metadataCount;
+/*
+     * Reads the JSON structure.
+     * Regex API reference: https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/regex/package-summary.html
+     */
+    private static final Pattern JSON_MESSAGE_PATTERN = Pattern.compile(
+            "\\{\\s*\"messageId\"\\s*:\\s*\"(.*?)\"\\s*,\\s*"
+            + "\"messageHash\"\\s*:\\s*\"(.*?)\"\\s*,\\s*"
+            + "\"recipient\"\\s*:\\s*\"(.*?)\"\\s*,\\s*"
+            + "\"message\"\\s*:\\s*\"(.*?)\"\\s*\\}",
+            Pattern.DOTALL
+    );
+
+    public void addSentMessage(Message message) {
+        ensureSentCapacity();
+        sentMessages[sentCount] = message;
+        sentCount++;
+        addMessageMetadata(message);
+    }
+
+    public void addDisregardedMessage(Message message) {
+        ensureDisregardedCapacity();
+        disregardedMessages[disregardedCount] = message;
+        disregardedCount++;
+        addMessageMetadata(message);
+    }
+
+    public void addStoredMessage(Message message) {
+        ensureStoredCapacity();
+        storedMessages[storedCount] = message;
+        storedCount++;
+        addMessageMetadata(message);
+    }
+
+    public void addMessageMetadata(Message message) {
+        for (int index = 0; index < metadataCount; index++) {
+            if (messageIds[index].equals(message.getMessageId())
+                    && messageHashes[index].equals(message.getMessageHash())) {
+                return;
+            }
+        }
+
+        ensureMetadataCapacity();
+        messageIds[metadataCount] = message.getMessageId();
+        messageHashes[metadataCount] = message.getMessageHash();
+        metadataCount++;
+    }
